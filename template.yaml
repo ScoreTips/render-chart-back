@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Aplicação Serverless para gerar slugs usando Snowflake ID
+
+Resources:
+  # Tabela DynamoDB
+  SlugTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: SlugsTable
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # Função Lambda para gerar slug
+  CreateSlugFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-endpoint/app.js
+      Handler: app.handler
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SlugTable
+      Events:
+        CreateSlugApi:
+          Type: Api
+          Properties:
+            Path: /create-endpoint
+            Method: POST
+
+  # Função Lambda para buscar dados pelo slug e verificar expiração
+  GetDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: get-data/app.js
+      Handler: app.handler
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SlugTable
+          EXPIRATION_TIME: "3600"  # Expira em 1 hora
+      Events:
+        GetDataApi:
+          Type: Api
+          Properties:
+            Path: /data/{slug}
+            Method: GET
+
+  # Função Lambda para remover dados expirados a cada 12 horas
+  RemoveExpiredDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: remove-expired/app.js
+      Handler: app.handler
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SlugTable
+          EXPIRATION_TIME: "3600"  # 1 hora
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(12 hours)  # Roda a cada 12 horas
