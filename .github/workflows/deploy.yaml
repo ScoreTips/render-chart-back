@@ -1,33 +1,52 @@
-name: Deploy to AWS
+name: Deploy SAM Application (Node.js)
 
 on:
   push:
     branches:
-      - main
+      - main # Trigger the deploy on pushes to the main branch
+  pull_request:
+    branches:
+      - main # Also trigger on pull requests to the main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1 # Adjust the region as needed
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: "14"
+          node-version: "20.x" # Specify the Node.js version (adjust as needed)
 
       - name: Install AWS SAM CLI
         run: |
-          pip install aws-sam-cli
+          sudo apt-get update -y
+          sudo apt-get install -y python3 python3-pip
+          pip3 install aws-sam-cli
 
-      - name: Build SAM Application
+      - name: SAM Build
         run: |
           sam build
 
-      - name: Deploy SAM Application
+      - name: SAM Deploy
         run: |
-          sam deploy --template-file template.yaml --stack-name slugs-app --capabilities CAPABILITY_IAM
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          sam deploy \
+            --stack-name dev-env \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset \
+            --no-confirm-changeset
+
+      - name: Post-deploy status
+        run: |
+          echo "SAM application deployed successfully."
