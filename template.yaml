@@ -20,8 +20,7 @@ Resources:
   CreateSlugFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/create-endpoint/app.js
-      Handler: app.handler
+      Handler: src/create-endpoint/app.handler
       Runtime: nodejs18.x
       Environment:
         Variables:
@@ -37,8 +36,7 @@ Resources:
   GetDataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/get-data/app.js
-      Handler: app.handler
+      Handler: src/get-data/app.handler
       Runtime: nodejs18.x
       Environment:
         Variables:
@@ -55,8 +53,7 @@ Resources:
   RemoveExpiredDataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/remove-expired/app.js
-      Handler: app.handler
+      Handler: src/remove-expired/app.handler
       Runtime: nodejs18.x
       Environment:
         Variables:
